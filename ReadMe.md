@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project is a *minimal header-only secure TCP command server* written in modern C++23. It demonstrates core concepts of networking, structured protocol design, controlled multi-threading, authentication, and rate limiting without relying on external binary dependencies or complex frameworks.
+This project is a *minimal header-only secure TCP command server* written in modern C++26. It demonstrates core concepts of networking, structured protocol design, controlled multi-threading, authentication, and rate limiting without relying on external binary dependencies or complex frameworks.
 
 The system is designed for *learning and architectural discipline*. Clients communicate with the server using a JSON-based protocol over TCP. The server processes commands, manages user authentication in memory, issues session tokens, and enforces basic security mechanisms such as password hashing and rate limiting.
 
@@ -138,5 +138,6 @@ Response:
   "session_token": "generated_token"
 }
 ```
+
 
 All requests are validated before processing.
