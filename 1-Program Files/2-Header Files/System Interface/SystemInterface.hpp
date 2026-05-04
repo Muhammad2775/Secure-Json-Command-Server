@@ -27,6 +27,8 @@ namespace sjcs {
     class Application {
     public:
         // Create the application with the configured port; ownership returned via unique_ptr.
+        // Before binding your code to a port, ensure it's free. On Windows, you can use 
+        // netstat -ano | findstr :<port_number> in the command prompt to see if a specific port is in use.
         static std::unique_ptr<Application> create(std::uint16_t port = 8000);
 
         // Start the application (non-blocking if desired).
