@@ -27,7 +27,7 @@ namespace sjcs {
     class Application {
     public:
         // Create the application with the configured port; ownership returned via unique_ptr.
-        static std::unique_ptr<Application> create(std::uint16_t port = 5555);
+        static std::unique_ptr<Application> create(std::uint16_t port = 8000);
 
         // Start the application (non-blocking if desired).
         virtual void start() = 0;
