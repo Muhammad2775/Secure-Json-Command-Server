@@ -93,16 +93,102 @@ No additional threads are allowed.
 
 All communication occurs via structured JSON messages over TCP.
 
-Each request must include a `"type"` field. Some requests may also require a `"session_token"`.
+Each request must include a `"type"` field. Some requests may also require a `"session_token"` depending on the operation.
 
 ---
 
 ### Example: Register
 
 Request:
+
 ```json
 {
   "type": "register",
   "username": "user1",
   "password": "password123"
 }
+```
+
+Response:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+---
+
+### Example: Login
+
+Request:
+
+```json
+{
+  "type": "login",
+  "username": "user1",
+  "password": "password123"
+}
+```
+
+Response:
+
+```json
+{
+  "status": "ok",
+  "session_token": "generated_token"
+}
+```
+
+---
+
+### Example: Authenticated Command
+
+Request:
+
+```json
+{
+  "type": "some_command",
+  "session_token": "generated_token"
+}
+```
+
+Response:
+
+```json
+{
+  "status": "ok",
+  "result": "command_executed"
+}
+```
+
+---
+
+### Example: Invalid Request
+
+Response:
+
+```json
+{
+  "status": "error",
+  "message": "invalid_request"
+}
+```
+
+---
+
+### Example: Authentication Failure
+
+Response:
+
+```json
+{
+  "status": "error",
+  "message": "invalid_credentials"
+}
+```
+
+---
+
+All requests are validated before processing. Invalid or malformed input results in structured error responses.
+
