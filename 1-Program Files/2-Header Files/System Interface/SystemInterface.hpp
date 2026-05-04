@@ -31,6 +31,8 @@ namespace sjcs {
         Before binding your code to a port, ensure it's free. On Windows, you can use 
         netstat -ano | findstr :<port_number> in the command prompt to see if a specific port is in use.
         It is good practice in C++ to make the port a variable or command-line argument so you can quickly switch if your chosen port is blocked.
+        If you are testing a client-server setup, let the operating system automatically assign an ephemeral port 
+        (typically in the 49152–65535 range) to the client side.
         */
         static std::unique_ptr<Application> create(std::uint16_t port = 8000);
 
