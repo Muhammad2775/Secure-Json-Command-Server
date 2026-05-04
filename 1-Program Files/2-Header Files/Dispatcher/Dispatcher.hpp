@@ -4,12 +4,16 @@
 
 #include <functional>
 #include <string>
+#include <vector>
+#include <memory>
+#include <utility> 
 //#include <unordered_map>
 
 #include <nlohmannjason/json.hpp>
 
 namespace sjcs {
 
+    //These classes have been forward declared
     class AuthManager;
     class RateLimiter;
 
@@ -36,7 +40,7 @@ namespace sjcs {
         using Handler = std::function<json(const json&)>;
 
         // Construct with references to business managers (Auth/RateLimiter).
-        // Managers must outlive the Dispatcher.
+        // Managers must outlive the Dispatcher in terms of lifetimes.
         explicit Dispatcher(AuthManager& auth, RateLimiter& rate_limiter) noexcept;
 
         Dispatcher(const Dispatcher&) = delete;
