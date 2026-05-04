@@ -93,6 +93,10 @@ No additional threads are allowed.
 
 All communication occurs via structured JSON messages over TCP.
 
+Each request must include a `"type"` field. Some requests may also require a `"session_token"`.
+
+---
+
 ### Example: Register
 
 Request:
@@ -102,42 +106,3 @@ Request:
   "username": "user1",
   "password": "password123"
 }
-```
-
-Response:
-```json
-{
-  "status": "ok"
-}
-```
-
-### Example: Login
-
-Request:
-```json
-{
-  "type": "login",
-  "username": "user1",
-  "password": "password123"
-}
-```
-
-Response:
-```json
-{
-  "status": "ok",
-  "session_token": "generated_token"
-}
-```
-
-### Example: Authenticated Command
-
-```json
-{
-  "type": "some_command",
-  "session_token": "generated_token"
-}
-```
-
-
-All requests are validated before processing.
