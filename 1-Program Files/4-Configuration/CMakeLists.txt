@@ -42,8 +42,9 @@ target_include_directories(application PRIVATE
 
 # 5. OPTIONS
 target_compile_definitions(application PRIVATE ASIO_STANDALONE)
-target_compile_options(application PRIVATE -Wall -Wextra -Wpedantic)
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    target_link_options(application PRIVATE -static-libgcc -static-libstdc++)
+if(MSVC)
+    target_compile_options(application PRIVATE /W4 /std:c++latest /Zc:__cplusplus /utf-8)
+else()
+    target_compile_options(application PRIVATE -Wall -Wextra -Wpedantic)
 endif()
