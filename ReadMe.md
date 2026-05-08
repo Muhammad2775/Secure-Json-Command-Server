@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project is a *minimal header-only secure TCP command server* written in modern C++26. It demonstrates core concepts of networking, structured protocol design, controlled multi-threading, authentication, and rate limiting without relying on external binary dependencies or complex frameworks.
+This project is a *minimal header-only secure TCP command server* written in modern C++23. It demonstrates core concepts of networking, structured protocol design, controlled multi-threading, authentication, and rate limiting without relying on external binary dependencies or complex frameworks.
 
 The system is designed for *learning and architectural discipline*. Clients communicate with the server using a JSON-based protocol over TCP. The server processes commands, manages user authentication in memory, issues session tokens, and enforces basic security mechanisms such as password hashing and rate limiting.
 
@@ -93,9 +93,14 @@ No additional threads are allowed.
 
 All communication occurs via structured JSON messages over TCP.
 
+Each request must include a `"type"` field. Some requests may also require a `"session_token"` depending on the operation.
+
+---
+
 ### Example: Register
 
 Request:
+
 ```json
 {
   "type": "register",
@@ -105,15 +110,19 @@ Request:
 ```
 
 Response:
+
 ```json
 {
   "status": "ok"
 }
 ```
 
+---
+
 ### Example: Login
 
 Request:
+
 ```json
 {
   "type": "login",
@@ -123,6 +132,7 @@ Request:
 ```
 
 Response:
+
 ```json
 {
   "status": "ok",
@@ -130,7 +140,11 @@ Response:
 }
 ```
 
+---
+
 ### Example: Authenticated Command
+
+Request:
 
 ```json
 {
@@ -139,5 +153,45 @@ Response:
 }
 ```
 
+Response:
 
-All requests are validated before processing.
+```json
+{
+  "status": "ok",
+  "result": "command_executed"
+}
+```
+
+---
+
+### Example: Invalid Request
+
+Response:
+
+```json
+{
+  "status": "error",
+  "message": "invalid_request"
+}
+```
+
+---
+
+### Example: Authentication Failure
+
+Response:
+
+```json
+{
+  "status": "error",
+  "message": "invalid_credentials"
+}
+```
+
+---
+
+All requests are validated before processing. Invalid or malformed input results in structured error responses.
+
+## Contact
+
+If you have questions then open a discussion in this repository. For urgent matters, contact the repository owner at: muhammad.moazzam2775@gmail.com.

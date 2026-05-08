@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <Session/Session.hpp>
+
 #include <cstddef>
 #include <string>
 #include <string_view>
