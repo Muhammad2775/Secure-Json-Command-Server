@@ -1,0 +1,24 @@
+# Prerequisites
+out/
+build/
+bin/
+obj/
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+*.sln
+*.vcxproj
+*.filters
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeSettings.json
+CMakePresets.json
+
+# Compilers
+*.exe
+*.pdb
+*.ilk
