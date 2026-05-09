@@ -1,61 +1,66 @@
-// Public API contract for a single client connection (session).
-
 #pragma once
 
+#include <array>
 #include <memory>
 #include <string>
-//#include <array>
-//#include <cstddef>
-//#include <boost/include/asio.hpp>
+#include <cstddef>
 
-namespace boost::asio {class ip;}
+#include <asio.hpp>
 
 namespace sjcs {
 
-    class Dispatcher; // forward
+    class Dispatcher;
 
     /**
      * Session
      *
      * Responsibility:
-     *  - Own a single TCP socket and manage async read/write cycles.
-     *  - Parse raw bytes into JSON frames (length-prefixed or other agreed framing).
-     *  - Forward parsed requests to Dispatcher and send back JSON responses.
+     *  - Own one TCP connection.
+     *  - Read raw bytes from the socket.
+     *  - Reconstruct complete JSON messages from the stream.
+     *  - Forward parsed requests to Dispatcher.
+     *  - Send JSON responses back to the client.
      *
      * Invariants:
-     *  - Session must not contain business logic (only forward to Dispatcher).
-     *  - Session owns its socket and buffers.
-     *  - Session lifetime controlled by shared_ptr and server/acceptor.
+     *  - Session owns its socket.
+     *  - Session does not contain business logic.
+     *  - Session lifetime is managed by std::shared_ptr.
+     *  - Session must always be created by Server/acceptor logic.
      *
      * Threading:
-     *  - All Session operations run in the Network Worker thread.
-     *  - Public stop() may be invoked from the CLI thread to request immediate close.
+     *  - Session operations run on the network worker thread.
+     *  - stop() may be called from the CLI thread to request shutdown.
+     * 
+     * 
+     * Note:
+     *  - This header should stay as a contract only for now. The real implementation comes later when the 
+     *    TCP server & acceptor logic is wired into Server & Session.
      */
+
     class Session : public std::enable_shared_from_this<Session> {
     public:
-        // TCP socket type alias for clarity
-        using Socket = boost::asio::ip;
+        using Socket = asio::ip::tcp::socket;
 
-        // Construct with a connected socket and reference to dispatcher (must outlive session).
-        Session(Socket socket, Dispatcher& dispatcher) noexcept;
+        Session(Socket socket, Dispatcher &dispatcher);
 
-        // Non-copyable
-        Session(const Session&) = delete;
-        Session& operator=(const Session&) = delete;
+        Session(const Session &) = delete;
+        Session &operator=(const Session &) = delete;
 
-        // Start the async read cycle. Called from network thread after construction.
         void start();
-
-        // Request immediate stop and close socket safely. Can be called from any thread.
         void stop() noexcept;
 
-        // Returns remote peer identifier (human-readable); non-throwing.
         std::string peer_id() const noexcept;
 
         ~Session() noexcept;
 
     private:
+        void do_read();
+        void handle_read(std::size_t bytes_transferred);
+        void do_write(std::string response);
+
+    private:
         struct Impl;
-        std::unique_ptr<Impl> pimpl_;
+        std::unique_ptr<Impl> impl_;
     };
+
 } // namespace sjcs
