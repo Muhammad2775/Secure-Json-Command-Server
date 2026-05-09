@@ -1,74 +1,104 @@
-// Public API contract for user registration, login, and session token lifecycle.
-
 #pragma once
 
 #include <cstddef>
+#include <mutex>
+#include <optional>
 #include <string>
 #include <string_view>
-#include <optional>
-#include <memory>
+#include <unordered_map>
+
+#include <Hashing/Hashing.hpp>
+#include <Session Manager/SessionManager.hpp>
 
 namespace sjcs {
 
-    /**
-     * User record (immutable once created via register_user).
-     * Note: password_hash must contain a hashed+salted password; no plaintext kept.
-     */
-
-    struct User {std::string username{}, password_hash{};};
-
-    /**
-     * AuthManager
-     *
-     * Responsibility:
-     *  - Register users (in-memory).
-     *  - Authenticate users (username+password) and issue session tokens.
-     *  - Validate and revoke session tokens.
-     *
-     * Invariants:
-     *  - No plaintext password is persisted after register_user returns.
-     *  - Tokens are opaque strings that must be unique.
-     *  - Token validation does not mutate state.
-     *
-     * Threading:
-     *  - All public methods are thread-safe (guarded internally).
-     *  - Used concurrently by Network Worker (login requests) and CLI thread (admin commands).
-     */
+    struct User {
+        std::string username{};
+        std::string password_hash{};
+    };
 
     class AuthManager {
     public:
-        AuthManager() noexcept;
-        AuthManager(const AuthManager&) = delete;
-        AuthManager& operator=(const AuthManager&) = delete;
+        explicit AuthManager(SessionManager &sessions) noexcept : sessions_{sessions} {}
 
-        // Register a new user. Returns false if the username is already taken or invalid.
-        bool register_user(std::string_view username, std::string_view password);
+        AuthManager(const AuthManager &) = delete;
+        AuthManager &operator=(const AuthManager &) = delete;
 
-        // Authenticate and return session token on success.
-        // Returns std::nullopt on failure.
-        std::optional<std::string> login(std::string_view username, std::string_view password);
+        bool register_user(std::string_view username, std::string_view password) {
+            if (username.empty() || password.empty()) {
+                return false;
+            }
 
-        // Validate an existing session token without mutating state.
-        [[nodiscard]] bool validate_token(std::string_view token) const noexcept;
+            std::scoped_lock lock(mutex_);
+            const std::string uname{username};
 
-        // Revoke an active session token.
-        void logout(std::string_view token) noexcept;
+            if (users_.find(uname) != users_.end()) {
+                return false;
+            }
 
-        // Number of registered users (approximate, thread-safe).
-        [[nodiscard]]  std::size_t user_count() const noexcept;
+            const std::string salt = Hashing::generate_salt();
+            const std::string hashed = Hashing::hash(password, salt);
 
-        // Number of active sessions (thread-safe).
-        [[nodiscard]] std::size_t active_session_count() const noexcept;
+            users_.emplace(uname, User{uname, salt + ":" + hashed});
+            return true;
+        }
 
-        ~AuthManager() noexcept;
+        std::optional<std::string> login(std::string_view username, std::string_view password) {
+            if (username.empty() || password.empty()) {
+                return std::nullopt;
+            }
+
+            std::scoped_lock lock(mutex_);
+            const std::string uname{username};
+
+            const auto it = users_.find(uname);
+            if (it == users_.end()) {
+                return std::nullopt;
+            }
+
+            const auto sep = it->second.password_hash.find(':');
+            if (sep == std::string::npos) {
+                return std::nullopt;
+            }
+
+            const std::string salt = it->second.password_hash.substr(0, sep);
+            const std::string expected = it->second.password_hash.substr(sep + 1);
+            const std::string actual = Hashing::hash(password, salt);
+
+            if (actual != expected) {
+                return std::nullopt;
+            }
+
+            const std::string token = generate_token_locked(uname);
+            sessions_.add(token, uname);
+            return token;
+        }
+
+        bool validate_token(std::string_view token) const noexcept { return sessions_.exists(token); }
+
+        void logout(std::string_view token) noexcept { sessions_.remove(token); }
+
+        std::optional<std::string> username_for_token(std::string_view token) const noexcept {
+            return sessions_.username_for(token);
+        }
+
+        std::size_t user_count() const noexcept {
+            std::scoped_lock lock(mutex_);
+            return users_.size();
+        }
+
+        std::size_t active_session_count() const noexcept { return sessions_.active_count(); }
 
     private:
-        // Internal helpers (not visible to users of the API).
-        [[nodiscard]] std::string hash_password(std::string_view password) const;
-        [[nodiscard]] std::string generate_token() const;
+        std::string generate_token_locked(std::string_view username) const {
+            const std::string salt = Hashing::generate_salt();
+            return Hashing::hash(username, salt) + "-" + salt;
+        }
 
-        struct Impl;
-        std::unique_ptr<Impl> pimpl_{nullptr};
+    private:
+        mutable std::mutex mutex_;
+        std::unordered_map<std::string, User> users_;
+        SessionManager &sessions_;
     };
 
 } // namespace sjcs
