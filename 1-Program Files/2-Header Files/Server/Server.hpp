@@ -1,56 +1,38 @@
-// Public API contract for the networking acceptor and lifecycle controller.
-
 #pragma once
 
-#include <cstdint>
 #include <atomic>
-#include <memory>
+#include <cstdint>
 
 namespace sjcs {
-
-    namespace net { class IoContextWrapper; } // forward (implementation detail)
 
     /**
      * Server
      *
-     * Responsibility:
-     *  - Own and manage the acceptor and io_context for all incoming connections.
-     *  - Create Session instances (declared elsewhere) for each accepted connection.
+     * Phase 1 responsibility:
+     *  - Own the server lifecycle state.
+     *  - Track the configured port.
+     *  - Expose start/stop/is_running for the runtime controller.
      *
-     * Invariants:
-     *  - start() is idempotent.
-     *  - stop() may be called concurrently from the CLI thread.
-     *  - Server does not perform authentication or command processing itself.
-     *
-     * Threading:
-     *  - start()/stop() are safe to call from the CLI thread.
-     *  - Accept loop runs in the Network Worker thread only.
+     * This is intentionally lightweight for now.
+     * Networking internals can be added in later phases without changing the public shape.
      */
     class Server {
     public:
-        // Construct with pre-created io context wrapper and TCP port.
-        // The io context must outlive this Server instance.
-        Server(net::IoContextWrapper& ios, std::uint16_t port) noexcept;
+        explicit Server(std::uint16_t port = 8000) noexcept : port_{port} {}
 
-        // Non-copyable, non-movable
-        Server(const Server&) = delete;
-        Server& operator=(const Server&) = delete;
+        Server(const Server &) = delete;
+        Server &operator=(const Server &) = delete;
 
-        // Start accepting connections. Idempotent.
-        void start();
+        void start() noexcept { running_.store(true, std::memory_order_release); }
 
-        // Initiate graceful shutdown. Safe to call from any thread.
-        void stop();
+        void stop() noexcept { running_.store(false, std::memory_order_release); }
 
-        // Query running state without locking.
-        bool is_running() const noexcept;
+        bool is_running() const noexcept { return running_.load(std::memory_order_acquire); }
 
-        // Destructor performs final cleanup/shutdown (no-throw).
-        ~Server() noexcept;
+        std::uint16_t port() const noexcept { return port_; }
 
     private:
-        struct Impl;
-        std::unique_ptr<Impl> pimpl_;
+        std::uint16_t port_{8000};
         std::atomic_bool running_{false};
     };
 
