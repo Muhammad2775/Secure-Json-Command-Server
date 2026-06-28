@@ -1,17 +1,13 @@
 # Secure JSON Command Server
 
 ## Overview
-
 This project is a *minimal header-only secure TCP command server* written in modern C++23. It demonstrates core concepts of networking, structured protocol design, controlled multi-threading, authentication, and rate limiting without relying on external binary dependencies or complex frameworks.
 
 The system is designed for *learning and architectural discipline*. Clients communicate with the server using a JSON-based protocol over TCP. The server processes commands, manages user authentication in memory, issues session tokens, and enforces basic security mechanisms such as password hashing and rate limiting.
 
 The project is fully CLI-based, self-contained, and uses only two `std::jthread`s to maintain strict concurrency boundaries. All logic is implemented inside header files, with `Application.cpp` acting only as the program bootstrapper.
 
----
-
 ## Features
-
 - TCP server built using standalone Asio (header-only).
 - JSON-based protocol using nlohmann/json (single header).
 - In-memory user registration and authentication.
@@ -23,10 +19,7 @@ The project is fully CLI-based, self-contained, and uses only two `std::jthread`
 - Feature-based test cases (one test per feature).
 - Zero external binary dependencies.
 
----
-
 ## Project Structure
-
     Secure JSON Command Server/
     ├── Program Files/
     ├── Source Files/
@@ -66,10 +59,7 @@ The project is fully CLI-based, self-contained, and uses only two `std::jthread`
     └── Documentation/
     └── ReadMe.md
 
----
-
 ## Concurrency Model
-
 The system enforces a strict two-thread design:
 
 - **Thread 1 – Network Worker**
@@ -87,20 +77,13 @@ All shared state (users, sessions, rate limits) is protected using `std::mutex`.
 
 No additional threads are allowed.
 
----
-
 ## JSON Protocol
-
 All communication occurs via structured JSON messages over TCP.
 
 Each request must include a `"type"` field. Some requests may also require a `"session_token"` depending on the operation.
 
----
-
 ### Example: Register
-
 Request:
-
 ```json
 {
   "type": "register",
@@ -110,19 +93,14 @@ Request:
 ```
 
 Response:
-
 ```json
 {
   "status": "ok"
 }
 ```
 
----
-
 ### Example: Login
-
 Request:
-
 ```json
 {
   "type": "login",
@@ -132,7 +110,6 @@ Request:
 ```
 
 Response:
-
 ```json
 {
   "status": "ok",
@@ -140,12 +117,8 @@ Response:
 }
 ```
 
----
-
 ### Example: Authenticated Command
-
 Request:
-
 ```json
 {
   "type": "some_command",
@@ -154,7 +127,6 @@ Request:
 ```
 
 Response:
-
 ```json
 {
   "status": "ok",
@@ -165,9 +137,7 @@ Response:
 ---
 
 ### Example: Invalid Request
-
 Response:
-
 ```json
 {
   "status": "error",
@@ -175,12 +145,8 @@ Response:
 }
 ```
 
----
-
 ### Example: Authentication Failure
-
 Response:
-
 ```json
 {
   "status": "error",
@@ -188,10 +154,7 @@ Response:
 }
 ```
 
----
-
 All requests are validated before processing. Invalid or malformed input results in structured error responses.
 
 ## Contact
-
 If you have questions then open a discussion in this repository. For urgent matters, contact the repository owner at: muhammad.moazzam2775@gmail.com.
